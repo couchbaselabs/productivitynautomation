@@ -77,6 +77,7 @@ def parse_arguments():
     parser.add_option("--maintain-threshold", dest="maintain_threshold", help="Check pool availability every time before dispatching", action="store_true", default=False)
     parser.add_option("--override-dispatcher", dest="override_dispatcher", default="test_suite_dispatcher_multiple_pools")
     parser.add_option("--failed-jobs", dest="failed_jobs", default=False, action="store_true")
+    parser.add_option("--rerun-build", dest="rerun_build", help="Couchbase server build to rerun with, same as --build if not supplied")
 
     options, _ = parser.parse_args()
 
@@ -656,6 +657,9 @@ def rerun_jobs(queue, server: Jenkins, cluster, pool_thresholds_hit, options):
 
             if 'dispatcher_params' not in parameters:
 
+                if options.rerun_build and "version_number" in parameters and parameters["version_number"] == options.build:
+                    parameters["version_number"] = options.rerun_build
+
                 if not options.noop:
                     server.build_job(job_name, parameters)
 
@@ -679,6 +683,9 @@ def rerun_jobs(queue, server: Jenkins, cluster, pool_thresholds_hit, options):
                 if job['result'] != "ABORTED":
                     # this is a rerun
                     dispatcher_params['fresh_run'] = False
+
+                if options.rerun_build and "version_number" in dispatcher_params and dispatcher_params["version_number"] == options.build:
+                    dispatcher_params["version_number"] = options.rerun_build
 
                 dispatcher_name = job_name_from_url(options.jenkins_url, dispatcher_params['dispatcher_url'])
 
